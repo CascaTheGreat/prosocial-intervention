@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { VideoCard } from '@/components/video-card';
-import { VideoPlayer } from '@/components/video-player';
+import { MediaPlayer } from '@/components/media-player';
 import { Fonts, Spacing } from '@/constants/theme';
 import { useStudy } from '@/contexts/study-context';
 import { useTheme } from '@/hooks/use-theme';
@@ -94,7 +94,7 @@ export function OnboardingFlow({ onDone }: OnboardingFlowProps) {
         {
           id: '2',
           role: 'assistant',
-          content: 'Before we get started on this journey, what is your name?',
+          content: 'Before we get started, what would you like me to call you? A nickname is perfect. It stays on your phone and is never sent to the research team.',
           timestamp: new Date(),
         },
       ]);
@@ -143,7 +143,7 @@ export function OnboardingFlow({ onDone }: OnboardingFlowProps) {
     const welcome1: ChatMessage = {
       id: (Date.now() + 1).toString(),
       role: 'assistant',
-      content: `Hi ${trimmed}, welcome! I am your personal digital coach, Percy. I'm excited to be working together.`,
+      content: `Hi ${finalName}, welcome! I am your personal digital coach, Percy. I'm excited to be working together.`,
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, welcome1]);
@@ -301,7 +301,7 @@ export function OnboardingFlow({ onDone }: OnboardingFlowProps) {
             />
             {videoWatched && (
               <View style={styles.watchedIndicator}>
-                <Check size={16} color="#4CAF50" strokeWidth={3} />
+                <Check size={16} color="#79D2A9" strokeWidth={3} />
                 <ThemedText style={styles.watchedText}>Watched</ThemedText>
               </View>
             )}
@@ -317,7 +317,7 @@ export function OnboardingFlow({ onDone }: OnboardingFlowProps) {
             styles.messageBubble,
             isBot
               ? [styles.messageBubbleLeft, { backgroundColor: theme.card, borderColor: theme.border }]
-              : [styles.messageBubbleRight, { backgroundColor: theme.background === '#0A0A0A' ? '#262626' : '#E8DCC8' }],
+              : [styles.messageBubbleRight, { backgroundColor: theme.userBubble }],
           ]}
         >
           <ThemedText
@@ -335,7 +335,7 @@ export function OnboardingFlow({ onDone }: OnboardingFlowProps) {
     );
   };
 
-  const isDark = theme.background === '#0A0A0A';
+  const isDark = theme.isDark;
   const bottomPadding = isKeyboardVisible
     ? (Platform.OS === 'ios' ? 8 : 16)
     : Math.max(insets.bottom, 16) + 12;
@@ -354,8 +354,8 @@ export function OnboardingFlow({ onDone }: OnboardingFlowProps) {
         ]}
       >
         <View style={styles.headerContent}>
-          <View style={[styles.avatar, { backgroundColor: isDark ? theme.primary : theme.accent }]}>
-            <Bird size={24} color={isDark ? '#171717' : '#ffffff'} />
+          <View style={[styles.avatar, { backgroundColor: theme.cta }]}>
+            <Bird size={24} color={theme.onCta} />
           </View>
           <View style={styles.headerTitleContainer}>
             <ThemedText style={styles.headerTitle}>Coach Percy</ThemedText>
@@ -383,7 +383,7 @@ export function OnboardingFlow({ onDone }: OnboardingFlowProps) {
         {/* Typing indicator */}
         {isTyping && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color={isDark ? theme.primary : theme.accent} />
+            <ActivityIndicator size="small" color={theme.cta} />
             <ThemedText style={styles.loadingText} themeColor="textSecondary">
               Percy is typing...
             </ThemedText>
@@ -407,13 +407,13 @@ export function OnboardingFlow({ onDone }: OnboardingFlowProps) {
                 style={[
                   styles.textInput,
                   {
-                    backgroundColor: isDark ? '#171717' : '#FAF7F0',
+                    backgroundColor: theme.inputBackground,
                     color: theme.text,
                     fontFamily: Fonts.sans,
                   },
                 ]}
-                placeholder="Type your name..."
-                placeholderTextColor={isDark ? '#7a7a7a' : '#7A6F5D'}
+                placeholder="A nickname is fine..."
+                placeholderTextColor={theme.textSecondary}
                 value={inputValue}
                 onChangeText={setInputValue}
                 onSubmitEditing={handleSendName}
@@ -423,23 +423,23 @@ export function OnboardingFlow({ onDone }: OnboardingFlowProps) {
                 style={[
                   styles.sendButton,
                   {
-                    backgroundColor: isDark ? theme.primary : theme.accent,
+                    backgroundColor: theme.cta,
                   },
                 ]}
                 onPress={handleSendName}
                 disabled={!inputValue.trim()}
               >
-                <Send size={18} color={isDark ? '#171717' : '#3D3428'} />
+                <Send size={18} color={theme.onCta} />
               </Pressable>
             </View>
           )}
 
           {step === 'welcome' && !isTyping && (
             <Pressable
-              style={[styles.actionButton, { backgroundColor: isDark ? theme.primary : theme.accent }]}
+              style={[styles.actionButton, { backgroundColor: theme.cta }]}
               onPress={handleProceedToExpectations}
             >
-              <ThemedText style={[styles.actionButtonText, { color: isDark ? '#171717' : '#3D3428' }]}>
+              <ThemedText style={[styles.actionButtonText, { color: theme.onCta }]}>
                 What to expect
               </ThemedText>
             </Pressable>
@@ -447,10 +447,10 @@ export function OnboardingFlow({ onDone }: OnboardingFlowProps) {
 
           {step === 'expectations' && !isTyping && (
             <Pressable
-              style={[styles.actionButton, { backgroundColor: isDark ? theme.primary : theme.accent }]}
+              style={[styles.actionButton, { backgroundColor: theme.cta }]}
               onPress={handleProceedToVideo}
             >
-              <ThemedText style={[styles.actionButtonText, { color: isDark ? '#171717' : '#3D3428' }]}>
+              <ThemedText style={[styles.actionButtonText, { color: theme.onCta }]}>
                 Continue
               </ThemedText>
             </Pressable>
@@ -473,10 +473,10 @@ export function OnboardingFlow({ onDone }: OnboardingFlowProps) {
 
           {step === 'ready' && !isTyping && (
             <Pressable
-              style={[styles.actionButton, { backgroundColor: isDark ? theme.primary : theme.accent }]}
+              style={[styles.actionButton, { backgroundColor: theme.cta }]}
               onPress={onDone}
             >
-              <ThemedText style={[styles.actionButtonText, { color: isDark ? '#171717' : '#3D3428' }]}>
+              <ThemedText style={[styles.actionButtonText, { color: theme.onCta }]}>
                 Get Started
               </ThemedText>
             </Pressable>
@@ -494,16 +494,17 @@ export function OnboardingFlow({ onDone }: OnboardingFlowProps) {
               </ThemedText>
             </View>
 
-            <VideoPlayer
-              videoId="6RypXcD_u1w"
+            {/* TODO(research team): replace with the final welcome / psychoeducation video. */}
+            <MediaPlayer
+              item={{ type: 'video', youtubeId: '6RypXcD_u1w', title: 'Kindness & Generosity Introduction' }}
               width={Math.min(Dimensions.get('window').width - Spacing.four * 4, 368)}
             />
 
             <Pressable
-              style={[styles.videoCompleteButton, { backgroundColor: isDark ? '#262626' : '#E8DCC8' }]}
+              style={[styles.videoCompleteButton, { backgroundColor: theme.userBubble }]}
               onPress={handleVideoComplete}
             >
-              <ThemedText style={styles.videoCompleteText}>Skip to End</ThemedText>
+              <ThemedText style={styles.videoCompleteText}>{"I've finished watching"}</ThemedText>
             </Pressable>
           </View>
         </View>
@@ -544,9 +545,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: Fonts.serif,
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
-    lineHeight: 26,
+    lineHeight: 22,
   },
   headerSubtitle: {
     fontSize: 13,
@@ -617,7 +618,7 @@ const styles = StyleSheet.create({
   },
   watchedText: {
     fontSize: 13,
-    color: '#4CAF50',
+    color: '#79D2A9',
     fontWeight: '700',
   },
   loadingContainer: {
@@ -708,7 +709,7 @@ const styles = StyleSheet.create({
   videoPlayerTitle: {
     color: '#ffffff',
     fontFamily: Fonts.serif,
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: '700',
   },
   videoPlayerSubtitle: {

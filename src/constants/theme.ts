@@ -7,68 +7,69 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
-export const Colors = {
-  light: {
-    text: '#3D3428',
-    background: '#F5F1E8',
-    backgroundElement: '#FDFCF9',
-    backgroundSelected: '#E8DCC8',
-    textSecondary: '#7A6F5D',
-    card: '#FDFCF9',
-    cardForeground: '#3D3428',
-    popover: '#FDFCF9',
-    popoverForeground: '#3D3428',
-    primary: '#C9A961',
-    primaryForeground: '#3D3428',
-    secondary: '#E8DCC8',
-    secondaryForeground: '#3D3428',
-    muted: '#EAE4D8',
-    mutedForeground: '#7A6F5D',
-    accent: '#D4AF37',
-    accentForeground: '#3D3428',
-    destructive: '#C87D5F',
-    destructiveForeground: '#FDFCF9',
-    border: 'rgba(61, 52, 40, 0.12)',
-    input: 'transparent',
-    inputBackground: '#FAF7F0',
-    switchBackground: '#D4C4A8',
-    ring: '#C9A961',
-  },
-  dark: {
-    text: '#FAFAFA',
-    background: '#0A0A0A',
-    backgroundElement: '#171717',
-    backgroundSelected: '#262626',
-    textSecondary: '#A1A1A1',
-    card: '#0A0A0A',
-    cardForeground: '#FAFAFA',
-    popover: '#0A0A0A',
-    popoverForeground: '#FAFAFA',
-    primary: '#FAFAFA',
-    primaryForeground: '#171717',
-    secondary: '#262626',
-    secondaryForeground: '#FAFAFA',
-    muted: '#262626',
-    mutedForeground: '#A1A1A1',
-    accent: '#262626',
-    accentForeground: '#FAFAFA',
-    destructive: '#82181A',
-    destructiveForeground: '#FB2C36',
-    border: '#262626',
-    input: '#262626',
-    inputBackground: '#262626',
-    switchBackground: '#262626',
-    ring: '#525252',
-  },
+/**
+ * Royal navy & silver theme, after the team's reference images: each screen is
+ * deep navy with a soft light bloom (<NavyBackdrop>),
+ * frosted navy-glass cards, and polished-silver buttons. The app commits to
+ * this one look, so light and dark mode share it.
+ */
+const NAVY = {
+  isDark: true,
+  text: '#F3F6FB',
+  background: 'rgba(255, 255, 255, 0.07)',
+  backgroundElement: 'rgba(255, 255, 255, 0.09)',
+  backgroundSelected: 'rgba(255, 255, 255, 0.16)',
+  textSecondary: '#AFBCD4',
+  /** Opaque screen color (screens never let the one beneath show through). */
+  screen: '#0B1E46',
+  card: '#13306A',
+  cardForeground: '#F3F6FB',
+  popover: '#13306A',
+  popoverForeground: '#F3F6FB',
+  primary: '#DCE3EE',
+  primaryForeground: '#0B1E46',
+  secondary: 'rgba(255, 255, 255, 0.12)',
+  secondaryForeground: '#F3F6FB',
+  muted: 'rgba(255, 255, 255, 0.10)',
+  mutedForeground: '#AFBCD4',
+  accent: '#1D4189',
+  accentForeground: '#F3F6FB',
+  destructive: '#FF9C86',
+  destructiveForeground: '#0B1E46',
+  border: 'rgba(214, 224, 240, 0.22)',
+  input: 'rgba(255, 255, 255, 0.10)',
+  inputBackground: 'rgba(255, 255, 255, 0.09)',
+  switchBackground: 'rgba(255, 255, 255, 0.18)',
+  ring: '#DCE3EE',
+  cta: '#DCE3EE',
+  onCta: '#0B1E46',
+  userBubble: 'rgba(220, 227, 238, 0.20)',
+  silver: '#C3CCD9',
+  /** Streak flame: soft aqua that sits calmly on navy. */
+  streak: '#8ED9D1',
+  /** "If" and "then" in if-then plans. */
+  ifThen: '#8ED9D1',
+  // Backdrop: bloom at the top, deep navy at the edges.
+  backdrop: ['#3A62B0', '#1A3C82', '#0B1E46'],
+  metalCard: ['rgba(255,255,255,0.16)', 'rgba(255,255,255,0.05)', 'rgba(255,255,255,0.11)'],
+  metalCta: ['#FFFFFF', '#AEB8C6', '#E6EAF0'],
+  metalBar: ['rgba(32,64,130,0.92)', 'rgba(11,30,70,0.96)'],
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export const Colors = {
+  light: NAVY,
+  dark: NAVY,
+} as const;
+
+type ColorKeys<T> = { [K in keyof T]: T[K] extends string ? K : never }[keyof T];
+export type ThemeColor = ColorKeys<typeof Colors.light> & ColorKeys<typeof Colors.dark>;
 
 export const Fonts = {
   sans: 'DMSans',
   sansItalic: 'DMSans-Italic',
-  serif: 'CrimsonPro',
-  serifItalic: 'CrimsonPro-Italic',
+  // The app uses one typeface throughout; the "serif" role maps to DM Sans too.
+  serif: 'DMSans',
+  serifItalic: 'DMSans-Italic',
   mono: 'DMSans',
 };
 

@@ -43,3 +43,9 @@ example
 /android
 
 src/utils/firestore.ts
+# Firebase Admin credentials (never commit)
+service-account*.json
+scripts/admin/exports/
+
+# Generated browser preview
+peach-preview.html

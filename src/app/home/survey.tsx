@@ -15,7 +15,8 @@ import { ThemedView } from '@/components/themed-view';
 import { Fonts, Spacing, MaxContentWidth } from '@/constants/theme';
 import { useStudy } from '@/contexts/study-context';
 import { useTheme } from '@/hooks/use-theme';
-import { storage } from '@/utils/storage';
+import { saveDailySurvey } from '@/utils/participant-data';
+import { computeAverageScore, storage } from '@/utils/storage';
 import { SURVEY_EMOTIONS } from '@/constants/survey';
 
 const EMOTIONS = SURVEY_EMOTIONS;
@@ -24,7 +25,8 @@ export default function SurveyScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { currentDay, updateProgress } = useStudy();
+  const { uid, currentDay, updateProgress } = useStudy();
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // State
   const [currentStep, setCurrentStep] = useState(0); // 0: Adherence Check, 1: Intro/Instructions, 2: Emotion Ratings
@@ -42,30 +44,41 @@ export default function SurveyScreen() {
   const isFormValid = adherence !== null && Object.keys(ratings).length === EMOTIONS.length;
 
   const handleSubmit = async () => {
-    if (!isFormValid) return;
+    if (!isFormValid || !adherence) return;
+    setSaveError(null);
 
-    const ratingValues = Object.values(ratings);
-    await storage.setDayScoreFromRatings(currentDay, ratingValues);
-    await updateProgress(currentDay, 'night survey', true);
-    setSubmitted(true);
+    // Ratings in SURVEY_EMOTIONS order (index 0..15).
+    const ratingValues = EMOTIONS.map((_, i) => ratings[i]);
+    const average = computeAverageScore(ratingValues);
+    try {
+      if (uid) {
+        await saveDailySurvey(uid, { day: currentDay, adherence, ratings: ratingValues, average });
+      }
+      await storage.setDayScore(currentDay, average);
+      await updateProgress(currentDay, 'night survey', true);
+      setSubmitted(true);
+    } catch (e) {
+      console.warn('Daily survey save failed', e);
+      setSaveError('We could not save your reflection. Please check your connection and try again.');
+    }
   };
 
-  const isDark = theme.background === '#0A0A0A';
+  const isDark = theme.isDark;
 
   if (submitted) {
     return (
       <ThemedView style={styles.container}>
         <View style={styles.successContent}>
-          <CheckCircle2 size={80} color="#4CAF50" strokeWidth={1.5} />
+          <CheckCircle2 size={80} color="#79D2A9" strokeWidth={1.5} />
           <ThemedText style={styles.successTitle}>Reflection Saved</ThemedText>
           <ThemedText style={styles.successSubtitle} themeColor="textSecondary">
             {"Thank you for completing today's check-in! Your response helps track your journey."}
           </ThemedText>
           <Pressable
-            style={[styles.submitButton, { backgroundColor: isDark ? theme.primary : theme.accent }]}
+            style={[styles.submitButton, { backgroundColor: theme.cta }]}
             onPress={() => router.back()}
           >
-            <ThemedText style={[styles.submitButtonText, { color: isDark ? '#171717' : '#3D3428' }]}>
+            <ThemedText style={[styles.submitButtonText, { color: theme.onCta }]}>
               Go Back Home
             </ThemedText>
           </Pressable>
@@ -132,10 +145,10 @@ export default function SurveyScreen() {
                   styles.progressBarSegment,
                   {
                     backgroundColor: isCompleted
-                      ? (isDark ? theme.primary : theme.accent)
+                      ? (theme.cta)
                       : isActive
-                      ? (isDark ? 'rgba(250, 250, 250, 0.6)' : 'rgba(61, 52, 40, 0.4)')
-                      : (isDark ? 'rgba(250, 250, 250, 0.15)' : 'rgba(61, 52, 40, 0.08)'),
+                      ? theme.textSecondary
+                      : theme.border,
                   },
                 ]}
               />
@@ -166,7 +179,7 @@ export default function SurveyScreen() {
                       styles.optionButton,
                       { borderColor: theme.border },
                       adherence === 'yes' && {
-                        backgroundColor: isDark ? theme.primary : theme.accent,
+                        backgroundColor: theme.cta,
                         borderColor: 'transparent',
                       },
                     ]}
@@ -175,7 +188,7 @@ export default function SurveyScreen() {
                     <ThemedText
                       style={[
                         styles.optionText,
-                        adherence === 'yes' && { color: isDark ? '#171717' : '#3D3428', fontWeight: '700' },
+                        adherence === 'yes' && { color: theme.onCta, fontWeight: '700' },
                       ]}
                     >
                       Yes
@@ -207,8 +220,8 @@ export default function SurveyScreen() {
               <Pressable
                 style={[
                   styles.submitButton,
-                  { backgroundColor: isDark ? theme.primary : theme.accent },
-                  adherence === null && styles.disabledButton,
+                  { backgroundColor: theme.cta },
+                  adherence === null && [styles.disabledButton, { borderColor: theme.textSecondary }],
                 ]}
                 onPress={() => setCurrentStep(1)}
                 disabled={adherence === null}
@@ -216,8 +229,8 @@ export default function SurveyScreen() {
                 <ThemedText
                   style={[
                     styles.submitButtonText,
-                    { color: isDark ? '#171717' : '#3D3428' },
-                    adherence === null && { color: theme.mutedForeground },
+                    { color: theme.onCta },
+                    adherence === null && { color: theme.textSecondary },
                   ]}
                 >
                   Next Step
@@ -254,10 +267,10 @@ export default function SurveyScreen() {
                   </ThemedText>
                 </Pressable>
                 <Pressable
-                  style={[styles.navButtonPrimary, { backgroundColor: isDark ? theme.primary : theme.accent }]}
+                  style={[styles.navButtonPrimary, { backgroundColor: theme.cta }]}
                   onPress={() => setCurrentStep(2)}
                 >
-                  <ThemedText style={[styles.navButtonPrimaryText, { color: isDark ? '#171717' : '#3D3428' }]}>
+                  <ThemedText style={[styles.navButtonPrimaryText, { color: theme.onCta }]}>
                     Continue
                   </ThemedText>
                 </Pressable>
@@ -289,11 +302,11 @@ export default function SurveyScreen() {
                             style={[
                               styles.scaleBubble,
                               {
-                                backgroundColor: isDark ? '#171717' : '#FAF7F0',
+                                backgroundColor: theme.inputBackground,
                                 borderColor: theme.border,
                               },
                               isSelected && {
-                                backgroundColor: isDark ? theme.primary : theme.accent,
+                                backgroundColor: theme.cta,
                                 borderColor: 'transparent',
                               },
                             ]}
@@ -303,7 +316,7 @@ export default function SurveyScreen() {
                               style={[
                                 styles.scaleBubbleText,
                                 isSelected && {
-                                  color: isDark ? '#171717' : '#3D3428',
+                                  color: theme.onCta,
                                   fontWeight: '700',
                                 },
                               ]}
@@ -318,6 +331,9 @@ export default function SurveyScreen() {
                 );
               })}
 
+              {saveError && (
+                <ThemedText style={{ color: theme.destructive, textAlign: 'center' }}>{saveError}</ThemedText>
+              )}
               <View style={styles.buttonRow}>
                 <Pressable
                   style={[styles.navButtonSecondary, { borderColor: theme.border }]}
@@ -330,8 +346,8 @@ export default function SurveyScreen() {
                 <Pressable
                   style={[
                     styles.navButtonPrimary,
-                    { backgroundColor: isDark ? theme.primary : theme.accent },
-                    !isFormValid && styles.disabledButton,
+                    { backgroundColor: theme.cta },
+                    !isFormValid && [styles.disabledButton, { borderColor: theme.textSecondary }],
                   ]}
                   onPress={handleSubmit}
                   disabled={!isFormValid}
@@ -339,8 +355,8 @@ export default function SurveyScreen() {
                   <ThemedText
                     style={[
                       styles.navButtonPrimaryText,
-                      { color: isDark ? '#171717' : '#3D3428' },
-                      !isFormValid && { color: theme.mutedForeground },
+                      { color: theme.onCta },
+                      !isFormValid && { color: theme.textSecondary },
                     ]}
                   >
                     Submit Reflection
@@ -375,7 +391,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: Fonts.serif,
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: '700',
   },
   headerSpacer: {
@@ -426,7 +442,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: Fonts.serif,
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
     marginBottom: 4,
   },
@@ -587,8 +603,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  // Not ready yet: an outlined button that is still clearly readable on navy.
   disabledButton: {
-    backgroundColor: '#EAE4D8',
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
     shadowOpacity: 0,
     elevation: 0,
   },
@@ -601,7 +619,7 @@ const styles = StyleSheet.create({
   },
   successTitle: {
     fontFamily: Fonts.serif,
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     textAlign: 'center',
     marginTop: 8,

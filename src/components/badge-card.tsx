@@ -1,12 +1,40 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Sprout, Heart, Ear, Lock } from 'lucide-react-native';
+import {
+  Ear,
+  Footprints,
+  HandHelping,
+  Heart,
+  Lock,
+  MessageCircle,
+  Mountain,
+  Smile,
+  Sparkles,
+  Sprout,
+  Users,
+  Droplets,
+  type LucideIcon,
+} from 'lucide-react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Fonts, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export type BadgeIconType = 'sprout' | 'heart' | 'ear' | 'lock';
+const ICONS = {
+  sprout: Sprout,
+  heart: Heart,
+  ear: Ear,
+  smile: Smile,
+  helping: HandHelping,
+  chat: MessageCircle,
+  footprints: Footprints,
+  sparkles: Sparkles,
+  mountain: Mountain,
+  users: Users,
+  ripple: Droplets,
+} satisfies Record<string, LucideIcon>;
+
+export type BadgeIconType = keyof typeof ICONS | 'lock';
 
 interface BadgeCardProps {
   title: string;
@@ -18,44 +46,11 @@ interface BadgeCardProps {
 export function BadgeCard({ title, subtitle, iconType, isEarned = true }: BadgeCardProps) {
   const theme = useTheme();
 
-  // Define color mapping for badge circles
-  const badgeColors = {
-    sprout: {
-      bg: '#8B9A4725',
-      icon: '#8B9A47',
-    },
-    heart: {
-      bg: '#4CAF5025',
-      icon: '#4CAF50',
-    },
-    ear: {
-      bg: '#E8980825',
-      icon: '#E89808',
-    },
-    lock: {
-      bg: theme.muted,
-      icon: theme.textSecondary,
-    },
-  };
-
-  const currentColors = isEarned ? badgeColors[iconType] : badgeColors.lock;
-
-  const renderIcon = () => {
-    const iconSize = 26;
-    if (!isEarned) {
-      return <Lock size={iconSize} color={currentColors.icon} />;
-    }
-    switch (iconType) {
-      case 'sprout':
-        return <Sprout size={iconSize} color={currentColors.icon} fill={currentColors.icon} />;
-      case 'heart':
-        return <Heart size={iconSize} color={currentColors.icon} fill={currentColors.icon} />;
-      case 'ear':
-        return <Ear size={iconSize} color={currentColors.icon} fill={currentColors.icon} />;
-      default:
-        return <Lock size={iconSize} color={currentColors.icon} />;
-    }
-  };
+  // Earned badges glow in soft jade (the same as a completed day); locked ones stay muted.
+  const color = isEarned ? '#79D2A9' : theme.textSecondary;
+  const bg = isEarned ? '#79D2A930' : theme.muted;
+  // Every badge shows its own icon; locked ones are dimmed with a small lock.
+  const Icon = iconType !== 'lock' ? ICONS[iconType] : Lock;
 
   return (
     <View
@@ -67,8 +62,13 @@ export function BadgeCard({ title, subtitle, iconType, isEarned = true }: BadgeC
         },
       ]}
     >
-      <View style={[styles.circle, { backgroundColor: currentColors.bg }]}>
-        {renderIcon()}
+      <View style={[styles.circle, { backgroundColor: bg }]}>
+        <Icon size={26} color={color} strokeWidth={2} style={!isEarned ? { opacity: 0.55 } : undefined} />
+        {!isEarned && (
+          <View style={[styles.lockBadge, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Lock size={11} color={theme.textSecondary} strokeWidth={2.4} />
+          </View>
+        )}
       </View>
       <View style={styles.textGroup}>
         <ThemedText style={styles.title}>{title}</ThemedText>
@@ -96,6 +96,17 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockBadge: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
